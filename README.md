@@ -95,3 +95,26 @@ und dort eintragen:
 ```bash
 * * * * * cd /your-project-path && php artisan schedule:run >> /dev/null 2>&1
 ```
+
+## Run with docker
+
+Still to do:
+* Configure apache inside mibo container to serve files
+* Mount volume for persitent mariadb storage
+* Define environment variables inside compose file instead of mounting .env file
+
+To run the current version, just
+
+```
+docker-compose up
+```
+
+To enter the container and continue hacking inside
+
+```
+docker exec -ti mibo /bin/bash
+```
+
+Inside the container, run the `php artisan ...` inside the container.
+
+Last open question: what to do with the cronjob? Is there a clean docker way of addressing this?
