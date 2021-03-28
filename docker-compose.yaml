@@ -1,33 +1,64 @@
 version: '3'
-
 services:
-  db:
-    image: mariadb
-    container_name: mibo-mariadb
+
+  #PHP Service
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: mibo-app
+    container_name: app
+    restart: unless-stopped
+    tty: true
+    environment:
+      SERVICE_NAME: app
+      SERVICE_TAGS: dev
+    working_dir: /var/www
+    volumes:
+      - ./:/var/www
+      - ./php/local.ini:/usr/local/etc/php/conf.d/local.ini
     networks:
-      - mibo-network
+      - app-network
+
+  #Nginx Service
+  webserver:
+    image: nginx:alpine
+    container_name: webserver
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./:/var/www
+      - ./nginx/conf.d/:/etc/nginx/conf.d/
+    networks:
+      - app-network
+
+  #MySQL Service
+  db:
+    image: mysql:5.7.22
+    container_name: db
+    restart: unless-stopped
+    tty: true
+    ports:
+      - "3306:3306"
     environment:
       MYSQL_ROOT_PASSWORD: secret
       MYSQL_PASSWORD: ${DB_PASSWORD}
       MYSQL_DATABASE: ${DB_DATABASE}
       MYSQL_USER: ${DB_USERNAME}
-    restart: unless-stopped
-    ports:
-      - 3306:3306
-  app:
-    image: mibo
-    build: .
-    container_name: mibo
-    networks:
-      - mibo-network
-    depends_on:
-      - db
-    ports:
-      - 80:80
-      - 443:443
     volumes:
-      - ${PWD}/.env:/opt/app/.env
-    restart: unless-stopped
+      - dbdata:/var/lib/mysql/
+        #- ./mysql/my.cnf:/etc/mysql/my.cnf
+    networks:
+      - app-network
 
+#Docker Networks
 networks:
-  mibo-network:
+  app-network:
+    driver: bridge
+#Volumes
+volumes:
+  dbdata:
+    driver: local
