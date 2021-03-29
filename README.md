@@ -98,23 +98,49 @@ und dort eintragen:
 
 ## Run with docker
 
-Still to do:
-* Configure apache inside mibo container to serve files
-* Mount volume for persitent mariadb storage
-* Define environment variables inside compose file instead of mounting .env file
+To run the app in docker, simply
 
-To run the current version, just
-
-```
+```bash
 docker-compose up
 ```
 
-To enter the container and continue hacking inside
+### First time setup
 
+When running for the first time, copy `example.env` to `.env`.  That file is
+usable as is for a test setup.
+Then run the artisan commands
+
+```bash
+docker-compose exec app php artisan key:generate
+docker-compose exec app php artisan webpush:vapid
+docker-compose exec app php artisan migrate
 ```
-docker exec -ti mibo /bin/bash
+In case the last command fails because you forgot something, for instance some email,
+then rollback with
+```bash
+docker-compose exec app php artisan migrate:rollback
 ```
+correct the configuration and migrate again.
 
-Inside the container, run the `php artisan ...` inside the container.
+To create the very first user, you user tinker:
+```bash
+docker-compose exec app php artisan tinker
+```
+Then:
+```
+$user = new App\Models\User();
+$user->password = Hash::make('1234');
+$user->name = 'max';
+$user->email = 'max@musterman.com
+$user->save();';
+```
+and exit by typing `ctrl+d`
 
-Last open question: what to do with the cronjob? Is there a clean docker way of addressing this?
+Now go to `localhost` in your browser and use the credentials just created.
+
+Since the database is persistent, at the next `docker-compose up`, there is no need to migrate or create a user again.
+
+To reset the database when developing, just remove the corresponding docker volume:
+```bash
+docker volume rm mitarbeiterboard_dbdata
+```
